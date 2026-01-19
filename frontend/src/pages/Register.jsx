@@ -1,3 +1,5 @@
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
 import { UserPlus, Mail, Lock, ShieldCheck, ArrowRight } from 'lucide-react';
 import { useToast } from '../context/ToastContext';

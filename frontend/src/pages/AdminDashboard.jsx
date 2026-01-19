@@ -10,7 +10,6 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { showToast } = useToast();
-
   useEffect(() => {
     const fetchReports = async () => {
       try {
@@ -22,43 +21,43 @@ const AdminDashboard = () => {
         setLoading(false);
       }
     };
-
-    const handleExportData = async () => {
-      try {
-        showToast('Preparing audit report...', 'info');
-        const res = await api.get('/transactions');
-        const data = res.data;
-
-        const headers = ['ID', 'User ID', 'Amount', 'Type', 'Description', 'Venue', 'Timestamp'];
-        const csvContent = [
-          headers.join(','),
-          ...data.map(t => [
-            t.id,
-            t.user_id,
-            t.amount,
-            t.transaction_type,
-            `"${t.description}"`,
-            `"${t.venue || ''}"`,
-            t.timestamp
-          ].join(','))
-        ].join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `campuseats_audit_${new Date().toISOString().split('T')[0]}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        showToast('Audit report downloaded', 'success');
-      } catch (err) {
-        showToast('Export failed', 'error');
-      }
-    };
     fetchReports();
   }, []);
+
+  const handleExportData = async () => {
+    try {
+      showToast('Preparing audit report...', 'info');
+      const res = await api.get('/transactions');
+      const data = res.data;
+
+      const headers = ['ID', 'User ID', 'Amount', 'Type', 'Description', 'Venue', 'Timestamp'];
+      const csvContent = [
+        headers.join(','),
+        ...data.map(t => [
+          t.id,
+          t.user_id,
+          t.amount,
+          t.transaction_type,
+          `"${t.description}"`,
+          `"${t.venue || ''}"`,
+          t.timestamp
+        ].join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `campuseats_audit_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Audit report downloaded', 'success');
+    } catch (err) {
+      showToast('Export failed', 'error');
+    }
+  };
 
   if (loading) return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center space-y-4">

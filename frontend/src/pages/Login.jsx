@@ -75,12 +75,6 @@ const Login = () => {
             </div>
           </div>
 
-          {error && (
-            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center space-x-3 text-red-400 text-xs font-bold animate-pulse">
-              <ShieldAlert size={16} />
-              <span>{error}</span>
-            </div>
-          )}
 
           <button type="submit" className="w-full btn-premium-primary py-5 text-sm font-black uppercase tracking-[0.2em]">
             Sign In Now
