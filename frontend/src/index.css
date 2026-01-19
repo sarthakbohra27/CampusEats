@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-inter bg-slate-950 text-white min-h-screen selection:bg-primary/30;
+    background: radial-gradient(circle at 0% 0%, #1e293b 0%, #0f172a 100%);
+  }
+}
+
+@layer components {
+  /* Premium Glassmorphism V2 */
+  .glass-premium {
+    @apply bg-white/5 backdrop-blur-glass border border-white/10 rounded-3xl shadow-2xl;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  }
+  
+  .glass-border-highlight {
+    @apply border border-white/20;
+  }
+
+  .mesh-gradient-balance {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(59, 130, 246, 0.2) 50%, rgba(15, 23, 42, 0.8) 100%);
+  }
+
+  .btn-premium-primary {
+    @apply bg-primary hover:bg-emerald-600 text-white font-semibold py-4 px-8 rounded-2xl transition-all duration-300 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  .btn-premium-secondary {
+    @apply bg-secondary hover:bg-blue-600 text-white font-semibold py-4 px-8 rounded-2xl transition-all duration-300 shadow-lg shadow-secondary/20 hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  .floating-nav {
+    @apply fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md glass-premium py-4 px-10 flex justify-between items-center z-50;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  /* Scan Animation */
+  .laser-line {
+    @apply absolute left-0 right-0 h-1 bg-primary/80 shadow-[0_0_15px_rgba(16,185,129,0.8)];
+    animation: scan 2s linear infinite;
+  }
+
+  @keyframes scan {
+    0% { top: 0% }
+    50% { top: 100% }
+    100% { top: 0% }
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full;
+}
