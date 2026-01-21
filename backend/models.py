@@ -48,3 +48,23 @@ class Transaction(db.Model):
             'skipped': self.skipped,
             'timestamp': self.timestamp.isoformat()
         }
+class MealSkip(db.Model):
+    __tablename__ = 'meal_skips'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    meal_slot = db.Column(db.String(20), nullable=False) # BREAKFAST, LUNCH, DINNER
+    skip_date = db.Column(db.Date, nullable=False)
+    reason = db.Column(db.String(200))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint('user_id', 'meal_slot', 'skip_date', name='_user_meal_skip_uc'),)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'meal_slot': self.meal_slot,
+            'skip_date': self.skip_date.isoformat(),
+            'reason': self.reason,
+            'created_at': self.created_at.isoformat()
+        }

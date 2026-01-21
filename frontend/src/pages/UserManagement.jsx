@@ -133,7 +133,7 @@ const UserManagement = () => {
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary"></div>
             
             <h2 className="text-3xl font-black tracking-tighter mb-2">Process Settlement</h2>
-            <p className="text-sm text-slate-500 font-medium mb-8">Debiting student <strong className="text-white">#{selectedUser.id}</strong> ledger for administrative return.</p>
+            <p className="text-sm text-slate-500 font-medium mb-8">Crediting student <strong className="text-white">#{selectedUser.id}</strong> ledger for administrative return.</p>
             
             <div className="space-y-6">
               <div>

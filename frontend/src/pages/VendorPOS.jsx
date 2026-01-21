@@ -2,18 +2,34 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import QRScanner from '../components/QRScanner';
-import { LogOut, MapPin, Coffee, Utensils, Moon, Candy, Camera, CheckCircle, XCircle, Zap, Database, CheckCircle2, ShoppingBag, History } from 'lucide-react';
+import { LogOut, MapPin, Coffee, Utensils, Moon, Candy, Camera, History, ShoppingBag, Leaf } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import dayjs from 'dayjs';
 
 const VendorPOS = () => {
   const [scanning, setScanning] = useState(false);
   const [venue, setVenue] = useState('Mess 1');
   const [mealType, setMealType] = useState('Lunch');
   const [mealCost, setMealCost] = useState(70);
-  const [success, setSuccess] = useState(false);
   const [sessionStats, setSessionStats] = useState({ count: 0, total: 0 });
+  const [skipStats, setSkipStats] = useState({ summary: { BREAKFAST: 0, LUNCH: 0, DINNER: 0 } });
+  
   const navigate = useNavigate();
   const { showToast } = useToast();
+
+  React.useEffect(() => {
+    fetchSkipStats();
+  }, []);
+
+  const fetchSkipStats = async () => {
+    try {
+      const tomorrow = dayjs().add(1, 'day').format('YYYY-MM-DD');
+      const res = await api.get(`/meal/skips/upcoming?date=${tomorrow}`);
+      setSkipStats(res.data);
+    } catch (err) {
+      console.error('Failed to fetch skip stats:', err);
+    }
+  };
 
   const mealPresets = [
     { name: 'Breakfast', cost: 30, icon: <Coffee size={24} /> },
@@ -25,26 +41,23 @@ const VendorPOS = () => {
   const handleMealSelect = (m) => {
     setMealType(m.name);
     setMealCost(m.cost);
-    setSuccess(false); // Clear status when meal type changes
   };
 
   const onScanSuccess = async (decodedText) => {
     setScanning(false);
     try {
       const qrPayload = JSON.parse(decodedText);
-      const res = await api.post('/meal/deduct', {
+      await api.post('/meal/deduct', {
         qr_payload: qrPayload,
         meal_cost: mealCost,
         description: `Meal: ${mealType}`,
         venue: venue
       });
-      setSuccess(true);
       setSessionStats(prev => ({
         count: prev.count + 1,
         total: prev.total + mealCost
       }));
       showToast(`${mealType} authorized for student`, 'success');
-      setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       showToast(err.response?.data?.message || 'Transaction Void', 'error');
     }
@@ -118,6 +131,34 @@ const VendorPOS = () => {
               />
             </div>
           </div>
+
+          <div className="glass-premium p-8 bg-emerald-500/5 border-emerald-500/10 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -translate-y-16 translate-x-16"></div>
+            <div className="flex items-center space-x-3 mb-6 relative z-10">
+              <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-500">
+                <Leaf size={16} />
+              </div>
+              <h3 className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">Waste Intelligence</h3>
+            </div>
+            
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-4">Skips scheduled for tomorrow:</p>
+            
+            <div className="grid grid-cols-3 gap-2">
+              {['BREAKFAST', 'LUNCH', 'DINNER'].map(slot => (
+                <div key={slot} className="bg-white/5 border border-white/5 p-3 rounded-xl flex flex-col items-center">
+                  <span className="text-[8px] font-black text-slate-500 mb-1">{slot}</span>
+                  <span className="text-xl font-black text-emerald-500">{skipStats.summary[slot] || 0}</span>
+                </div>
+              ))}
+            </div>
+            
+            <div className="mt-6 pt-6 border-t border-white/5 flex items-center justify-between">
+              <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Planned Savings</div>
+              <div className="text-[10px] font-black text-white bg-white/5 px-2 py-1 rounded">
+                ~{(Object.values(skipStats.summary).reduce((a, b) => a + b, 0) * 0.4).toFixed(1)}kg Saved
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Right: Interaction (3/5) */}
@@ -162,9 +203,8 @@ const VendorPOS = () => {
               </button>
             </div>
           ) : (
-            <div className="glass-premium p-4 relative h-full flex flex-col bg-black">
-              <div className="flex-1 rounded-2xl overflow-hidden relative">
-                <div className="laser-line"></div>
+            <div className="glass-premium p-0 relative h-full flex flex-col bg-black overflow-hidden">
+              <div className="flex-1 relative">
                 <QRScanner onScanSuccess={onScanSuccess} onScanError={(err) => console.log(err)} />
               </div>
               <button 

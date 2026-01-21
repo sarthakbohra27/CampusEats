@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import BottomNav from '../components/BottomNav';
 import dayjs from 'dayjs';
-import { Plus, CreditCard, ArrowRight, Wallet, User, TrendingUp, TrendingDown, Zap } from 'lucide-react';
+import { Plus, CreditCard, ArrowRight, Wallet, User, TrendingUp, TrendingDown, Zap, CalendarX } from 'lucide-react';
 
 const AnimatedNumber = ({ value }) => {
   const [displayValue, setDisplayValue] = useState(value);
@@ -27,7 +27,7 @@ const AnimatedNumber = ({ value }) => {
     };
 
     requestAnimationFrame(animate);
-  }, [value]);
+  }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <span>{displayValue.toLocaleString()}</span>;
 };
@@ -101,7 +101,7 @@ const StudentDashboard = () => {
     const fetchData = async () => {
       setLoading(true);
       detectMealSlot();
-      const [_, txHistory] = await Promise.all([fetchBalance(), fetchTransactions()]);
+      const [ , txHistory] = await Promise.all([fetchBalance(), fetchTransactions()]);
       await fetchProjection(txHistory || []);
       setLoading(false);
     };
@@ -228,6 +228,19 @@ const StudentDashboard = () => {
           <div className="relative z-10">
             <span className="font-extrabold text-lg block">Pay via QR</span>
             <span className="text-[10px] text-slate-500 font-bold uppercase">Instant Scan</span>
+          </div>
+        </div>
+
+        <div 
+          onClick={() => navigate('/student/meal-skip')} 
+          className="glass-premium p-6 flex flex-col justify-between h-40 cursor-pointer hover:bg-white/10 transition-all border-white/5 group"
+        >
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform">
+            <CalendarX size={24} strokeWidth={3} />
+          </div>
+          <div>
+            <span className="font-extrabold text-lg block">Skip Meal</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase">Reduce Waste</span>
           </div>
         </div>
       </div>

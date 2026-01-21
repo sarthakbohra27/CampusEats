@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Sector, Label } from 'recharts';
-import { Download, Users, Activity, Leaf, LogOut, ChevronRight, IndianRupee, TrendingUp, Zap, Globe, Shield, Radio } from 'lucide-react';
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Label } from 'recharts';
+import { Download, Users, Activity, Leaf, LogOut, TrendingUp, Zap, Shield, Radio } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -81,6 +81,24 @@ const AdminDashboard = () => {
     </div>
   );
 
+  if (!reports) return (
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center space-y-6">
+      <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500">
+        <Shield size={48} />
+      </div>
+      <div className="text-center">
+        <h2 className="text-2xl font-black text-white mb-2">Sync Interrupted</h2>
+        <p className="text-slate-500 text-sm max-w-xs mx-auto">Unable to establish a secure connection to the Intelligence Core. Please verify your administrative credentials.</p>
+      </div>
+      <button 
+        onClick={() => window.location.reload()}
+        className="btn-premium-primary px-8"
+      >
+        Retry Connection
+      </button>
+    </div>
+  );
+
   const barData = Object.entries(reports.venue_report || {}).map(([name, count]) => ({ name, count }));
   const pieData = Object.entries(reports.source_report || {}).map(([name, value]) => ({ name, value }));
   const growthData = reports.growth_trend || [];
@@ -141,7 +159,7 @@ const AdminDashboard = () => {
             <div className="h-4 w-16 bg-emerald-500/10 rounded-full border border-emerald-500/20 px-2 py-0.5 flex items-center justify-center text-[8px] font-black text-emerald-500">↑ 12.4%</div>
           </div>
           <h3 className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Total volume</h3>
-          <p className="text-3xl font-black tracking-tighter">₹{reports.total_volume.toLocaleString()}</p>
+          <p className="text-3xl font-black tracking-tighter">₹{(reports.total_volume || 0).toLocaleString()}</p>
         </div>
         <div className="glass-premium p-8 relative overflow-hidden group border-blue-500/20">
           <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -translate-y-16 translate-x-16 blur-2xl"></div>
@@ -156,19 +174,19 @@ const AdminDashboard = () => {
             </div>
           </div>
           <h3 className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">In-Flight tx</h3>
-          <p className="text-3xl font-black tracking-tighter">{reports.total_transactions}</p>
+          <p className="text-3xl font-black tracking-tighter">{reports.total_transactions || 0}</p>
         </div>
         <div className="glass-premium p-8 relative overflow-hidden group border-amber-500/20 bg-emerald-500/5">
           <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full -translate-y-16 translate-x-16 blur-2xl"></div>
           <Leaf className="text-emerald-500 mb-6" size={32} />
           <h3 className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Waste reduction</h3>
-          <p className="text-3xl font-black tracking-tighter text-emerald-400">{reports.waste_reduction_pct}%</p>
+          <p className="text-3xl font-black tracking-tighter text-emerald-400">{reports.waste_reduction_pct || 0}%</p>
         </div>
         <div className="glass-premium p-8 relative overflow-hidden group border-indigo-500/20">
           <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full -translate-y-16 translate-x-16 blur-2xl"></div>
           <Users className="text-indigo-500 mb-6" size={32} />
           <h3 className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Entity Load</h3>
-          <p className="text-3xl font-black tracking-tighter">{reports.active_users}</p>
+          <p className="text-3xl font-black tracking-tighter">{reports.active_users || 0}</p>
         </div>
       </motion.div>
 

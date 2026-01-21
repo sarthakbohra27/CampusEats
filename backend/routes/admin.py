@@ -17,11 +17,8 @@ def get_reports():
     total_volume = db.session.query(func.abs(func.sum(Transaction.amount))).one()[0] or 0
     
     # Waste Reduction Calculation (Simulated)
-    # Formula: (Skipped Meals / Total Registered Students) * 100
     total_students = User.query.filter_by(role='student').count()
-    # Mocking skipped meals logic: students who didn't eat in the last slot
-    # For MVP, we'll just return a dynamic mock based on transaction count
-    waste_reduction = 45.5 # Base mock value as per PDF "up to 50%"
+    waste_reduction = 45.5 # Base mock value
     
     # Meal counts by venue
     venue_data = db.session.query(
@@ -84,14 +81,11 @@ def refund_balance():
     if not user:
         return jsonify({'message': 'User not found'}), 404
 
-    if user.balance < amount:
-        return jsonify({'message': 'Insufficient balance for refund'}), 400
-
-    user.balance -= amount
+    user.balance += amount
     
     transaction = Transaction(
         user_id=user_id,
-        amount=-amount,
+        amount=amount,
         transaction_type='refund',
         description='Administrative Refund',
         source='admin'

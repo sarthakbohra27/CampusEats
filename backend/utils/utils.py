@@ -45,11 +45,11 @@ def require_auth(f):
         return f(*args, **kwargs)
     return decorated
 
-def require_role(role):
+def require_role(*roles):
     def decorator(f):
         @wraps(f)
         def decorated(*args, **kwargs):
-            if not hasattr(request, 'user') or request.user.get('role') != role:
+            if not hasattr(request, 'user') or request.user.get('role') not in roles:
                 return jsonify({'message': 'Unauthorized access'}), 403
             return f(*args, **kwargs)
         return decorated

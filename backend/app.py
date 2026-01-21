@@ -8,6 +8,7 @@ from routes.transactions import transactions_bp
 from routes.meal import meal_bp
 from routes.qr_code import qr_bp
 from routes.admin import admin_bp
+from routes.meal_skip import meal_skip_bp
 import os
 
 def create_app():
@@ -24,6 +25,7 @@ def create_app():
     app.register_blueprint(meal_bp, url_prefix='/meal')
     app.register_blueprint(qr_bp, url_prefix='/qr')
     app.register_blueprint(admin_bp, url_prefix='/admin')
+    app.register_blueprint(meal_skip_bp, url_prefix='/meal')
     
     with app.app_context():
         db.create_all()

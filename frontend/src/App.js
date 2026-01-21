@@ -11,6 +11,7 @@ import TopUpWallet from './pages/TopUpWallet';
 import TransactionHistory from './pages/TransactionHistory';
 import Profile from './pages/Profile';
 import UserManagement from './pages/UserManagement';
+import MealSkip from './pages/MealSkip';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, token } = useAuth();
@@ -40,6 +41,9 @@ const AppRoutes = () => {
       } />
       <Route path="/student/transactions" element={
         <ProtectedRoute allowedRoles={['student']}><TransactionHistory /></ProtectedRoute>
+      } />
+      <Route path="/student/meal-skip" element={
+        <ProtectedRoute allowedRoles={['student']}><MealSkip /></ProtectedRoute>
       } />
       
       {/* Vendor Routes */}
