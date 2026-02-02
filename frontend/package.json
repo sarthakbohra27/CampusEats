@@ -12,6 +12,7 @@
     "dayjs": "^1.11.19",
     "framer-motion": "^12.27.1",
     "html5-qrcode": "^2.3.8",
+    "jsqr": "^1.4.0",
     "lucide-react": "^0.562.0",
     "postcss": "^8.4.31",
     "react": "^19.2.3",

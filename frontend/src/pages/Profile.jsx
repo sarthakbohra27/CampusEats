@@ -8,21 +8,54 @@ import { useToast } from '../context/ToastContext';
 const Profile = () => {
   const { user, logout } = useAuth();
   const [qrBase64, setQrBase64] = useState('');
+  const [qrExpiry, setQrExpiry] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(300);
   const [shareLink, setShareLink] = useState('');
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
 
+  const fetchQR = async () => {
+    try {
+      const res = await api.get('/qr/generate');
+      setQrBase64(res.data.qr_image);
+      setQrExpiry(res.data.expires_at);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
-    const fetchQR = async () => {
-      try {
-        const res = await api.get('/qr/generate');
-        setQrBase64(res.data.qr_image);
-      } catch (err) {
-        console.error(err);
-      }
-    };
     if (user.role === 'student') fetchQR();
   }, [user.role]);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (!qrExpiry) return;
+
+    // Immediately calculate initial time left
+    const calculateTimeLeft = () => {
+      const now = Date.now() / 1000; // Current time in seconds
+      const remaining = Math.max(0, qrExpiry - now);
+      return Math.floor(remaining);
+    };
+
+    // Set initial time immediately
+    setTimeLeft(calculateTimeLeft());
+
+    // Then start interval
+    const interval = setInterval(() => {
+      const remaining = calculateTimeLeft();
+      setTimeLeft(remaining);
+      
+      // Auto-refresh QR when expired (only once)
+      if (remaining <= 0) {
+        clearInterval(interval); // Stop interval first
+        fetchQR(); // Fetch new QR (will trigger new interval via qrExpiry change)
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [qrExpiry]);
 
   const handleShare = async () => {
     setLoading(true);
@@ -74,6 +107,21 @@ const Profile = () => {
             ) : (
               <div className="w-56 h-56 bg-white/5 rounded-[40px] mb-6 animate-pulse border border-white/10"></div>
             )}
+            
+            {/* Countdown Timer */}
+            {qrExpiry && (
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="text-[10px] text-slate-500 font-bold tracking-tight text-center uppercase">
+                  Expires in:
+                </div>
+                <div className={`text-sm font-black tracking-tight tabular-nums ${
+                  timeLeft < 60 ? 'text-red-500 animate-pulse' : 'text-primary'
+                }`}>
+                  {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+                </div>
+              </div>
+            )}
+            
             <p className="text-[10px] text-slate-500 font-bold tracking-tight text-center mb-8 uppercase">Dynamic Refresh: 5 Minutes</p>
             
             <button 

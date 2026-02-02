@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import QRScanner from '../components/QRScanner';
-import { LogOut, MapPin, Coffee, Utensils, Moon, Candy, Camera, History, ShoppingBag, Leaf } from 'lucide-react';
+import { LogOut, MapPin, Coffee, Utensils, Moon, Candy, Camera, History, ShoppingBag, Upload, Leaf } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
-import dayjs from 'dayjs';
+import jsQR from 'jsqr';
 
 const VendorPOS = () => {
   const [scanning, setScanning] = useState(false);
@@ -12,24 +12,26 @@ const VendorPOS = () => {
   const [mealType, setMealType] = useState('Lunch');
   const [mealCost, setMealCost] = useState(70);
   const [sessionStats, setSessionStats] = useState({ count: 0, total: 0 });
+  const [processing, setProcessing] = useState(false);
   const [skipStats, setSkipStats] = useState({ summary: { BREAKFAST: 0, LUNCH: 0, DINNER: 0 } });
+  const fileInputRef = useRef(null);
   
   const navigate = useNavigate();
   const { showToast } = useToast();
 
-  React.useEffect(() => {
+  // Fetch today's meal skip stats for vendors
+  useEffect(() => {
+    const fetchSkipStats = async () => {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const res = await api.get(`/meal/skips/upcoming?date=${today}`);
+        setSkipStats(res.data);
+      } catch (err) {
+        console.error('Failed to fetch skip stats:', err);
+      }
+    };
     fetchSkipStats();
   }, []);
-
-  const fetchSkipStats = async () => {
-    try {
-      const tomorrow = dayjs().add(1, 'day').format('YYYY-MM-DD');
-      const res = await api.get(`/meal/skips/upcoming?date=${tomorrow}`);
-      setSkipStats(res.data);
-    } catch (err) {
-      console.error('Failed to fetch skip stats:', err);
-    }
-  };
 
   const mealPresets = [
     { name: 'Breakfast', cost: 30, icon: <Coffee size={24} /> },
@@ -43,10 +45,9 @@ const VendorPOS = () => {
     setMealCost(m.cost);
   };
 
-  const onScanSuccess = async (decodedText) => {
-    setScanning(false);
+  const processQRPayment = async (qrPayload) => {
+    setProcessing(true);
     try {
-      const qrPayload = JSON.parse(decodedText);
       await api.post('/meal/deduct', {
         qr_payload: qrPayload,
         meal_cost: mealCost,
@@ -57,10 +58,68 @@ const VendorPOS = () => {
         count: prev.count + 1,
         total: prev.total + mealCost
       }));
-      showToast(`${mealType} authorized for student`, 'success');
+      showToast(`₹${mealCost} ${mealType} authorized`, 'success');
     } catch (err) {
       showToast(err.response?.data?.message || 'Transaction Void', 'error');
+    } finally {
+      setProcessing(false);
     }
+  };
+
+  const onScanSuccess = async (decodedText) => {
+    setScanning(false);
+    try {
+      const qrPayload = JSON.parse(decodedText);
+      await processQRPayment(qrPayload);
+    } catch (err) {
+      showToast('Invalid QR code format', 'error');
+    }
+  };
+
+  const handleFileUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setProcessing(true);
+    try {
+      const image = new Image();
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        image.src = e.target.result;
+        image.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = image.width;
+          canvas.height = image.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(image, 0, 0);
+          
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height);
+          
+          if (code) {
+            try {
+              const qrPayload = JSON.parse(code.data);
+              processQRPayment(qrPayload);
+            } catch (err) {
+              showToast('Invalid QR code format', 'error');
+              setProcessing(false);
+            }
+          } else {
+            showToast('No QR code found in image', 'error');
+            setProcessing(false);
+          }
+        };
+      };
+
+      reader.readAsDataURL(file);
+    } catch (err) {
+      showToast('Failed to read QR image', 'error');
+      setProcessing(false);
+    }
+
+    // Reset file input
+    event.target.value = '';
   };
 
   return (
@@ -131,34 +190,6 @@ const VendorPOS = () => {
               />
             </div>
           </div>
-
-          <div className="glass-premium p-8 bg-emerald-500/5 border-emerald-500/10 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -translate-y-16 translate-x-16"></div>
-            <div className="flex items-center space-x-3 mb-6 relative z-10">
-              <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-500">
-                <Leaf size={16} />
-              </div>
-              <h3 className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">Waste Intelligence</h3>
-            </div>
-            
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-4">Skips scheduled for tomorrow:</p>
-            
-            <div className="grid grid-cols-3 gap-2">
-              {['BREAKFAST', 'LUNCH', 'DINNER'].map(slot => (
-                <div key={slot} className="bg-white/5 border border-white/5 p-3 rounded-xl flex flex-col items-center">
-                  <span className="text-[8px] font-black text-slate-500 mb-1">{slot}</span>
-                  <span className="text-xl font-black text-emerald-500">{skipStats.summary[slot] || 0}</span>
-                </div>
-              ))}
-            </div>
-            
-            <div className="mt-6 pt-6 border-t border-white/5 flex items-center justify-between">
-              <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Planned Savings</div>
-              <div className="text-[10px] font-black text-white bg-white/5 px-2 py-1 rounded">
-                ~{(Object.values(skipStats.summary).reduce((a, b) => a + b, 0) * 0.4).toFixed(1)}kg Saved
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Right: Interaction (3/5) */}
@@ -185,6 +216,25 @@ const VendorPOS = () => {
                 </div>
               </div>
 
+              {/* Today's Skipped Meals */}
+              <div className="glass-premium p-6 bg-emerald-500/5 border-emerald-500/10 w-full max-w-sm mb-8">
+                <div className="flex items-center space-x-2 mb-4">
+                  <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-500">
+                    <Leaf size={14} />
+                  </div>
+                  <h3 className="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em]">Today's Skipped Meals</h3>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-2">
+                  {['BREAKFAST', 'LUNCH', 'DINNER'].map(slot => (
+                    <div key={slot} className="bg-white/5 border border-white/5 p-2 rounded-lg flex flex-col items-center">
+                      <span className="text-[7px] font-black text-slate-500 mb-1">{slot}</span>
+                      <span className="text-lg font-black text-emerald-500">{skipStats.summary?.[slot] || 0}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="w-32 h-32 bg-primary/10 rounded-full flex items-center justify-center mb-8 relative">
                 <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping opacity-25"></div>
                 <div className="relative z-10 text-primary drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]">
@@ -195,12 +245,36 @@ const VendorPOS = () => {
               <h2 className="text-3xl font-black tracking-tighter mb-4 text-center">Ready to Accept Payment</h2>
               <p className="text-slate-500 text-sm mb-12 text-center max-w-xs">Ask the student to present the QR code from their Campus Wallet profile.</p>
               
-              <button 
-                onClick={() => setScanning(true)}
-                className="btn-premium-primary w-full max-w-sm"
-              >
-                Launch QR Scanner
-              </button>
+              <div className="flex flex-col w-full max-w-sm space-y-4">
+                <button 
+                  onClick={() => setScanning(true)}
+                  disabled={processing}
+                  className="btn-premium-primary w-full flex items-center justify-center space-x-2"
+                >
+                  <Camera size={20} />
+                  <span>{processing ? 'Processing...' : 'Launch QR Scanner'}</span>
+                </button>
+                
+                <div className="relative">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={processing}
+                    className="w-full btn-premium-secondary py-4 flex items-center justify-center space-x-2"
+                  >
+                    <Upload size={18} />
+                    <span className="font-black uppercase tracking-[0.2em] text-xs">
+                      {processing ? 'Decoding...' : 'Upload QR Image'}
+                    </span>
+                  </button>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="glass-premium p-0 relative h-full flex flex-col bg-black overflow-hidden">

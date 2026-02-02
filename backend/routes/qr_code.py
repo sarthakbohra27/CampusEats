@@ -3,7 +3,7 @@ import qrcode
 import json
 import io
 import base64
-from datetime import datetime, timedelta
+import time
 from utils.utils import require_auth
 
 qr_bp = Blueprint('qr', __name__)
@@ -14,9 +14,10 @@ def generate_qr():
     user_id = request.user['user_id']
     
     # Payload with 5-minute expiry
+    # CRITICAL: Use time.time() for correct UTC timestamp
     payload = {
         'user_id': user_id,
-        'expires': (datetime.utcnow() + timedelta(minutes=5)).timestamp()
+        'expires': time.time() + (5 * 60)  # Current UTC time + 5 minutes
     }
     
     qr_data = json.dumps(payload)

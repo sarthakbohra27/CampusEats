@@ -31,11 +31,12 @@ def seed():
         db.session.add(vendor)
 
         # Create Student
+        # Balance calculation: ₹2000 (initial top-up) - ₹650 (5x₹70 lunch + 5x₹60 dinner) = ₹1350
         student = User(
             email="student@test.com",
             password_hash=hash_password("student123"),
             role="student",
-            balance=500.0
+            balance=1350.0  # Correct balance matching transaction ledger
         )
         db.session.add(student)
         db.session.commit()

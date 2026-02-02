@@ -76,10 +76,19 @@ def refund_balance():
     data = request.json
     user_id = data.get('user_id')
     amount = data.get('amount')
+    
+    if not amount or amount <= 0:
+        return jsonify({'message': 'Invalid refund amount'}), 400
+    
+    if amount > 10000:
+        return jsonify({'message': 'Maximum refund amount is ₹10000. Contact system administrator for larger refunds.'}), 400
 
-    user = User.query.get(user_id)
+    # Use pessimistic locking
+    user = User.query.with_for_update().get(user_id)
     if not user:
         return jsonify({'message': 'User not found'}), 404
+    
+    print(f"DEBUG: Admin refund for user {user_id}, balance before: {user.balance}, refunding: {amount}")
 
     user.balance += amount
     
@@ -92,5 +101,11 @@ def refund_balance():
     )
     db.session.add(transaction)
     db.session.commit()
+    
+    # Verify wallet consistency
+    from utils.utils import verify_wallet_consistency
+    verified_balance = verify_wallet_consistency(user_id)
+    
+    print(f"DEBUG: Refund complete. New balance: {verified_balance}")
 
-    return jsonify({'message': 'Refund processed', 'new_balance': user.balance}), 200
+    return jsonify({'message': 'Refund processed', 'new_balance': verified_balance}), 200

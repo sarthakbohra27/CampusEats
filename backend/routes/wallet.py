@@ -23,12 +23,22 @@ def topup():
 
     if not amount or amount <= 0:
         return jsonify({'message': 'Invalid amount'}), 400
+    
+    # Maximum top-up validation (prevent unrealistic balances)
+    if amount > 5000:
+        return jsonify({'message': 'Maximum top-up amount is ₹5000'}), 400
 
-    user = User.query.get(user_id)
+    # Use pessimistic locking to prevent race conditions
+    user = User.query.with_for_update().get(user_id)
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+    
     print(f"DEBUG: Topup for user {user_id}, initial balance: {user.balance}, amount to add: {amount}")
+    
+    # Update balance
     user.balance += amount
-    db.session.add(user)
 
+    # Create transaction record
     transaction = Transaction(
         user_id=user_id,
         amount=amount,
@@ -38,8 +48,14 @@ def topup():
     )
     db.session.add(transaction)
     db.session.commit()
+    
+    # Verify wallet consistency after commit
+    from utils.utils import verify_wallet_consistency
+    verified_balance = verify_wallet_consistency(user_id)
+    
+    print(f"DEBUG: Topup complete. New balance: {verified_balance}")
 
-    return jsonify({'message': 'Top-up successful', 'new_balance': user.balance}), 200
+    return jsonify({'message': 'Top-up successful', 'new_balance': verified_balance}), 200
 
 @wallet_bp.route('/share', methods=['GET'])
 @require_auth
